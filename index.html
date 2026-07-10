@@ -18,12 +18,15 @@ html, body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 canvas {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   display: block;
+  touch-action: none;
 }
 
 #hud { pointer-events: none; }
@@ -554,6 +557,7 @@ button {
         <div class="hint">
           Touch arrows to move · 🐾 Dakota Sniff · 🌈 Dash · 🧲 Sparkle Pull
         </div>
+        <div class="hint" style="opacity:.45;font-size:12px">v5</div>
       </div>
     </div>
   </div>
@@ -1010,6 +1014,7 @@ class Game {
   loadSave(){try{const s=JSON.parse(localStorage.getItem("zoeyAdventureSaveV1")||"null");if(!s)return;this.stageIndex=Math.max(0,Math.min(this.stages.length-1,s.stageIndex||0));this.counts={...this.counts,...s.counts};this.level=s.level||1;this.xp=s.xp||0;this.xpNeed=s.xpNeed||100;this.upgrades={...this.upgrades,...s.upgrades};this.stickers=Array.isArray(s.stickers)?s.stickers:[];this.questIndex=s.questIndex||0;this.questProgress=s.questProgress||0}catch(_){}}
   bind() {
     addEventListener("resize",()=>this.resize());
+    addEventListener("orientationchange",()=>{this.resize();setTimeout(()=>this.resize(),350)});
     addEventListener("keydown",e=>{this.keys.add(e.key.toLowerCase());if(e.key.toLowerCase()==="f")this.sniff();if(e.key===" ") e.preventDefault();});
     addEventListener("keyup",e=>this.keys.delete(e.key.toLowerCase()));
     document.querySelectorAll(".move[data-dir]").forEach(button=>{
