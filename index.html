@@ -431,9 +431,26 @@ button {
 
 @media (pointer:fine) and (min-width:901px){#mobile-controls{display:none}}
 
+#rotate-notice{display:none}
+@media (orientation:portrait) and (pointer:coarse){
+  #rotate-notice{
+    display:flex;position:fixed;inset:0;z-index:100;
+    flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    background:linear-gradient(180deg,#bfefff 0%,#ffe5f7 100%);
+    color:#754097;text-align:center;padding:24px;
+  }
+  #rotate-notice .rotate-emoji{font-size:104px;line-height:1;animation:rotateHint 2s ease-in-out infinite}
+  #rotate-notice p{font-size:34px;font-weight:900;margin:0}
+}
+@keyframes rotateHint{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+
 </style>
 </head>
 <body>
+  <div id="rotate-notice" aria-hidden="true">
+    <div class="rotate-emoji">📱🔄</div>
+    <p>Turn me sideways!</p>
+  </div>
   <div id="game-shell">
     <canvas id="game" width="1280" height="720"></canvas>
 
