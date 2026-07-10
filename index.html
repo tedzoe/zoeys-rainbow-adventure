@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Zoey's Rainbow Adventure</title>
   <style>
 html, body {
@@ -10,6 +10,8 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
   font-family: "Trebuchet MS", system-ui, sans-serif;
   background: linear-gradient(180deg, #bfefff 0%, #ffe5f7 100%);
 }
@@ -451,6 +453,61 @@ button {
   #rotate-notice p{font-size:34px;font-weight:900;margin:0}
 }
 @keyframes rotateHint{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+
+
+/* Mobile-first overrides */
+#rotate-notice { display:none !important; }
+html, body, #game-shell, canvas { min-height:100%; }
+body { position:fixed; inset:0; width:100%; }
+button { -webkit-tap-highlight-color: transparent; }
+
+@media (pointer:coarse), (max-width:900px) {
+  #mobile-controls {
+    display:flex;
+    bottom:max(10px, env(safe-area-inset-bottom));
+    padding-left:max(10px, env(safe-area-inset-left));
+    padding-right:max(10px, env(safe-area-inset-right));
+  }
+  .dpad { width:144px; height:144px; }
+  .dpad .move { width:56px; height:56px; border-radius:18px; font-size:23px; }
+  .dpad .up{left:44px}.dpad .down{left:44px}.dpad .left{top:44px}.dpad .right{top:44px}
+  .action-buttons { width:148px; gap:7px; }
+  .action, .action.dash { width:66px; height:66px; font-size:29px; border-width:3px; }
+  .counters { left:8px; top:max(8px, env(safe-area-inset-top)); padding:7px 9px; font-size:16px; gap:3px 9px; border-radius:16px; }
+  .stage-card { top:max(8px, env(safe-area-inset-top)); min-width:0; width:min(46vw,230px); padding:7px 9px; border-radius:16px; }
+  #stageName { font-size:16px; }
+  .stage-card .label { font-size:11px; }
+  .level-card, .friend-card, .picture-goal-card { display:none; }
+  .quest-card { right:8px; top:max(76px, calc(env(safe-area-inset-top) + 72px)); width:132px; padding:7px 8px; border-radius:16px; }
+  .quest-icon{font-size:25px}.quest-text{font-size:12px}.quest-progress{font-size:11px}
+  .message { top:max(118px, calc(env(safe-area-inset-top) + 110px)); font-size:16px; padding:9px 13px; max-width:68vw; border-radius:18px; }
+  .progress-wrap { bottom:170px; width:min(62vw,390px); padding:6px 9px 8px; border-radius:18px; }
+  .progress-label,.xp-label{display:none}.progress-bar{height:11px}.xp-bar{height:8px;margin-top:5px}
+  .panel { width:min(88vw,620px); max-height:88dvh; overflow:auto; padding:22px 16px; border-radius:28px; }
+  .panel h1 { font-size:clamp(32px,10vw,54px); }
+  .panel h2 { font-size:31px; }
+  .panel p { font-size:17px; }
+  .choices { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .choice { min-height:155px; padding:12px; }
+}
+
+@media (pointer:coarse) and (orientation:portrait) {
+  .stage-card { left:auto; right:8px; transform:none; width:45vw; }
+  .quest-card { top:max(72px, calc(env(safe-area-inset-top) + 66px)); }
+  .message { top:max(136px, calc(env(safe-area-inset-top) + 128px)); max-width:78vw; }
+  .progress-wrap { bottom:164px; width:70vw; }
+  .dpad { width:136px; height:136px; }
+  .dpad .move { width:54px; height:54px; }
+  .dpad .up{left:41px}.dpad .down{left:41px}.dpad .left{top:41px}.dpad .right{top:41px}
+  .action-buttons { width:140px; }
+  .action, .action.dash { width:62px; height:62px; font-size:27px; }
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+  .progress-wrap { bottom:12px; width:min(38vw,360px); }
+  .message { top:76px; }
+  .quest-card { top:72px; }
+}
 
 </style>
 </head>
@@ -1014,6 +1071,7 @@ class Game {
   loadSave(){try{const s=JSON.parse(localStorage.getItem("zoeyAdventureSaveV1")||"null");if(!s)return;this.stageIndex=Math.max(0,Math.min(this.stages.length-1,s.stageIndex||0));this.counts={...this.counts,...s.counts};this.level=s.level||1;this.xp=s.xp||0;this.xpNeed=s.xpNeed||100;this.upgrades={...this.upgrades,...s.upgrades};this.stickers=Array.isArray(s.stickers)?s.stickers:[];this.questIndex=s.questIndex||0;this.questProgress=s.questProgress||0}catch(_){}}
   bind() {
     addEventListener("resize",()=>this.resize());
+    window.visualViewport?.addEventListener("resize",()=>this.resize());
     addEventListener("orientationchange",()=>{this.resize();setTimeout(()=>this.resize(),350)});
     addEventListener("keydown",e=>{this.keys.add(e.key.toLowerCase());if(e.key.toLowerCase()==="f")this.sniff();if(e.key===" ") e.preventDefault();});
     addEventListener("keyup",e=>this.keys.delete(e.key.toLowerCase()));
@@ -1034,15 +1092,21 @@ class Game {
       document.getElementById("start-screen").classList.add("hidden");
       document.getElementById("mobile-controls").classList.remove("hidden");
       this.started = true;
+      document.documentElement.requestFullscreen?.().catch?.(()=>{});
+      screen.orientation?.lock?.("landscape").catch?.(()=>{});
       this.audio.unlock();
       this.ui.showMessage(`🦄 Zoey's Goal: ${this.stage.message}`, 3400);
     });
   }
   resize() {
-    this.canvas.width = Math.floor(innerWidth*this.DPR);
-    this.canvas.height = Math.floor(innerHeight*this.DPR);
-    this.canvas.style.width = innerWidth+"px";
-    this.canvas.style.height = innerHeight+"px";
+    const viewport = window.visualViewport;
+    const width = Math.max(1, Math.round(viewport?.width || innerWidth));
+    const height = Math.max(1, Math.round(viewport?.height || innerHeight));
+    this.canvas.width = Math.floor(width*this.DPR);
+    this.canvas.height = Math.floor(height*this.DPR);
+    this.canvas.style.width = width+"px";
+    this.canvas.style.height = height+"px";
+    document.documentElement.style.setProperty("--app-height", height+"px");
     this.ctx.setTransform(this.DPR,0,0,this.DPR,0,0);
   }
   inputVector() {
